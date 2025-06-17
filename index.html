@@ -3,21 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
-  <!-- ✅ PWA + mobile support -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="icon" href="icon-192.png" type="image/png" />
-
   <title>Check-in</title>
-
   <style>
     html, body {
       margin: 0;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      padding: env(safe-area-inset);
       font-family: sans-serif;
       width: 100%;
       height: 100%;
@@ -59,9 +55,9 @@
       width: 170px;
       height: 170px;
       z-index: 1;
-      pointer-events: none;
       animation: rotate 36s linear infinite;
       transform-origin: center;
+      pointer-events: none;
     }
 
     .static-border {
@@ -70,7 +66,7 @@
       left: 0;
       width: 170px;
       height: 170px;
-      z-index: 1;
+      z-index: 2;
       pointer-events: none;
     }
 
@@ -189,21 +185,19 @@
   </style>
 </head>
 <body>
-  <div class="app" id="appRoot">
+  <div class="app">
     <div class="checkin-header">Check in</div>
-
     <div class="circle-wrapper">
       <svg class="rotating-ring" width="170" height="170">
-        <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="0 7" stroke-linecap="round"/>
+        <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="0 7" stroke-linecap="round" />
       </svg>
       <svg class="static-border" width="170" height="170">
-        <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="21 21" stroke-linecap="round"/>
+        <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="21 21" stroke-linecap="round" />
       </svg>
       <div class="photo-wrapper">
         <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
       </div>
     </div>
-
     <div class="card">
       <div class="check-success">Check-in successful</div>
       <div id="name" class="name">Name Placeholder</div>
@@ -214,37 +208,36 @@
       <div class="checkin-time"><span id="checkinTime">--</span></div>
       <div class="timer" id="timer">⏱ 0:00:00</div>
     </div>
-
     <label class="upload-btn" id="uploadLabel">
       Upload Image
       <input type="file" id="uploadImage" accept="image/*" />
     </label>
-
     <img src="bottom.png" alt="Bottom Decoration" class="bottom-image" />
   </div>
 
   <script>
-    function getUrlParams() {
-      const params = new URLSearchParams(window.location.search);
+    async function getCheckinData() {
+      const cache = await caches.open('checkin-cache');
+      const resp = await cache.match('/checkin-data');
+      if (resp) return await resp.json();
       return {
-        name: localStorage.getItem("name") || params.get("name") || "Dmytro Gerasymchuk",
-        id: localStorage.getItem("id") || params.get("id") || "264019394",
-        activity: localStorage.getItem("activity") || params.get("activity") || "Schwimmen",
-        venue: localStorage.getItem("venue") || params.get("venue") || "Strandbad Jungfernheide – Schwimmen"
+        name: "Dmytro Gerasymchuk",
+        id: "264019394",
+        activity: "Schwimmen",
+        venue: "Strandbad Jungfernheide – Schwimmen"
       };
     }
 
-    window.onload = () => {
-      const { name, id, activity, venue } = getUrlParams();
-
-      const nameParts = name.trim().split(" ");
+    window.onload = async () => {
+      const data = await getCheckinData();
+      const nameParts = data.name.trim().split(" ");
       const formattedName = nameParts.length > 1
         ? `${nameParts[0]}\n${nameParts.slice(1).join(" ")}`
-        : name;
+        : data.name;
       document.getElementById("name").textContent = formattedName;
-      document.getElementById("id").textContent = id;
-      document.getElementById("activity").textContent = activity;
-      document.getElementById("venue").textContent = venue;
+      document.getElementById("id").textContent = data.id;
+      document.getElementById("activity").textContent = data.activity;
+      document.getElementById("venue").textContent = data.venue;
 
       const now = new Date();
       const options = { month: 'short', day: 'numeric' };
