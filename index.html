@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Check-in</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: #d3d3d3;
+    }
+
+    .app {
+      width: 400px;
+      height: 800px;
+      margin: 0 auto;
+      position: relative;
+      background: #d3d3d3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .checkin-header {
+      margin-top: 20px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .circle-wrapper {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 170px;
+      height: 170px;
+      z-index: 10;
+    }
+
+    .rotating-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 170px;
+      height: 170px;
+      z-index: 1;
+      animation: rotate 36s linear infinite;
+      transform-origin: center;
+      pointer-events: none;
+    }
+
+    .static-border {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .photo-wrapper {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      overflow: hidden;
+      top: 10px;
+      left: 10px;
+      background: #ccc;
+      z-index: 3;
+    }
+
+    .photo-wrapper img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .upload-btn {
+      display: inline-block;
+      margin-top: 270px;
+      padding: 8px 14px;
+      background-color: #007f5f;
+      color: white;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    .upload-btn input {
+      display: none;
+    }
+
+    .card {
+      position: absolute;
+      top: 180px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #007f5f;
+      color: white;
+      width: 280px;
+      height: 350px; /* Adjusted height */
+      border-radius: 12px;
+      text-align: center;
+      z-index: 5;
+      padding-top: 100px;
+      padding-left: 20px;
+      padding-right: 20px;
+      box-sizing: border-box;
+    }
+
+    .check-success {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .name {
+      font-size: 20px;
+      font-weight: bold;
+      white-space: pre-line;
+    }
+
+    .id {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    .activity {
+      margin-top: 5px;
+      font-size: 14px;
+      font-weight: bold; /* Make activity bold */
+    }
+
+    .venue {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    .checkin-label {
+      position: absolute;
+      bottom: 30px;
+      left: 15px;
+      font-size: 12px;
+      font-weight: normal;
+    }
+
+    .checkin-time {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .timer {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      font-size: 13px;
+    }
+
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="checkin-header">Check in</div>
+
+    <div class="circle-wrapper">
+      <svg class="rotating-ring" width="170" height="170">
+        <circle
+          cx="85" cy="85" r="83"
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.9)"
+          stroke-width="3"
+          stroke-dasharray="0 7"
+          stroke-linecap="round"
+        />
+      </svg>
+      <svg class="static-border" width="170" height="170">
+        <circle
+          cx="85" cy="85" r="83"
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.9)"
+          stroke-width="3"
+          stroke-dasharray="21 21"
+          stroke-linecap="round"
+        />
+      </svg>
+
+      <div class="photo-wrapper">
+        <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="check-success">Check-in successful</div>
+      <div id="name" class="name">Name Placeholder</div>
+      <div id="id" class="id">ID</div>
+      <div class="activity" id="activity">Activity</div>
+      <div class="venue" id="venue">Venue</div>
+      <div class="checkin-label">Checked-in at</div>
+      <div class="checkin-time"><span id="checkinTime">--</span></div>
+      <div class="timer" id="timer">⏱ 0:00:00</div>
+    </div>
+
+    <label class="upload-btn" id="uploadLabel">
+      Upload Image
+      <input type="file" id="uploadImage" accept="image/*" />
+    </label>
+  </div>
+
+  <script>
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        name: params.get("name") || "Dmytro Gerasymchuk",
+        id: params.get("id") || "264019394",
+        activity: params.get("activity") || "Schwimmen",
+        venue: params.get("venue") || "Strandbad Jungfernheide – Schwimmen"
+      };
+    }
+
+    window.onload = () => {
+      const { name, id, activity, venue } = getUrlParams();
+
+      const nameParts = name.trim().split(" ");
+      const formattedName = nameParts.length > 1
+        ? `${nameParts[0]}\n${nameParts.slice(1).join(" ")}`
+        : name;
+      document.getElementById("name").textContent = formattedName;
+
+      document.getElementById("id").textContent = id;
+      document.getElementById("activity").textContent = activity;
+      document.getElementById("venue").textContent = venue;
+
+      const now = new Date();
+      const options = { month: 'short', day: 'numeric' };
+      const formattedDate = `${now.toLocaleDateString('en-US', options)}, ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      document.getElementById("checkinTime").textContent = formattedDate;
+
+      let seconds = 0;
+      setInterval(() => {
+        seconds++;
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        document.getElementById("timer").textContent = `⏱ ${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }, 1000);
+
+      const upload = document.getElementById("uploadImage");
+      const profile = document.getElementById("profileImage");
+      const label = document.getElementById("uploadLabel");
+
+      upload.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          profile.src = URL.createObjectURL(file);
+          label.style.display = "none";
+        }
+      });
+    };
+  </script>
+</body>
+</html>
