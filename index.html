@@ -190,6 +190,16 @@
       font-size: 13px;
     }
 
+    .bottom-image {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      max-width: 100%;
+      z-index: 100;
+      pointer-events: none;
+    }
+
     @keyframes rotate {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -198,7 +208,7 @@
 </head>
 <body>
   <div class="app" id="appRoot">
-    <button class="fullscreen-btn" id="fsBtn">Full Screen</button>
+    
 
     <div class="checkin-header">Check in</div>
 
@@ -229,6 +239,8 @@
       Upload Image
       <input type="file" id="uploadImage" accept="image/*" />
     </label>
+
+    <img src="bottom.png" alt="Bottom Decoration" class="bottom-image" />
   </div>
 
   <script>
