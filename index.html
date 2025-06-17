@@ -21,7 +21,6 @@
       background-size: cover;
       overflow: hidden;
     }
-
     .app {
       width: 400px;
       height: 800px;
@@ -31,13 +30,40 @@
       flex-direction: column;
       align-items: center;
     }
-
-    .checkin-header {
-      margin-top: 20px;
-      font-size: 22px;
-      font-weight: bold;
+    .form-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 100px;
+      width: 80%;
+      max-width: 300px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
-
+    .form-container input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 14px;
+    }
+    .form-container button {
+      width: 100%;
+      background: #007f5f;
+      color: white;
+      padding: 10px;
+      border: none;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .circle-wrapper, .card, .upload-btn, .bottom-image {
+      display: none;
+    }
+    .loaded .circle-wrapper,
+    .loaded .card,
+    .loaded .upload-btn,
+    .loaded .bottom-image {
+      display: block;
+    }
     .circle-wrapper {
       position: absolute;
       top: 100px;
@@ -47,7 +73,6 @@
       height: 170px;
       z-index: 10;
     }
-
     .rotating-ring {
       position: absolute;
       top: 0;
@@ -59,7 +84,6 @@
       transform-origin: center;
       pointer-events: none;
     }
-
     .static-border {
       position: absolute;
       top: 0;
@@ -69,7 +93,6 @@
       z-index: 2;
       pointer-events: none;
     }
-
     .photo-wrapper {
       position: absolute;
       width: 150px;
@@ -81,14 +104,12 @@
       background: #ccc;
       z-index: 3;
     }
-
     .photo-wrapper img {
       width: 150px;
       height: 150px;
       object-fit: cover;
       object-position: center;
     }
-
     .upload-btn {
       display: inline-block;
       margin-top: 270px;
@@ -100,11 +121,9 @@
       cursor: pointer;
       z-index: 20;
     }
-
     .upload-btn input {
       display: none;
     }
-
     .card {
       position: absolute;
       top: 180px;
@@ -122,29 +141,24 @@
       padding-right: 20px;
       box-sizing: border-box;
     }
-
     .check-success {
       font-weight: bold;
       margin-bottom: 10px;
     }
-
     .name {
       font-size: 20px;
       font-weight: bold;
       white-space: pre-line;
     }
-
     .id, .venue {
       margin-top: 5px;
       font-size: 14px;
     }
-
     .activity {
       margin-top: 5px;
       font-size: 14px;
       font-weight: bold;
     }
-
     .checkin-label {
       position: absolute;
       bottom: 30px;
@@ -152,7 +166,6 @@
       font-size: 12px;
       font-weight: normal;
     }
-
     .checkin-time {
       position: absolute;
       bottom: 15px;
@@ -160,14 +173,12 @@
       font-weight: bold;
       font-size: 13px;
     }
-
     .timer {
       position: absolute;
       bottom: 15px;
       right: 15px;
       font-size: 13px;
     }
-
     .bottom-image {
       position: fixed;
       bottom: 0;
@@ -177,7 +188,6 @@
       z-index: 100;
       pointer-events: none;
     }
-
     @keyframes rotate {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -185,8 +195,17 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="app" id="appRoot">
+    <div id="setupForm" class="form-container">
+      <input id="inputName" placeholder="Name" required />
+      <input id="inputId" placeholder="ID" required />
+      <input id="inputActivity" placeholder="Activity" required />
+      <input id="inputVenue" placeholder="Venue" required />
+      <button onclick="saveUserData()">Start Check-in</button>
+    </div>
+
     <div class="checkin-header">Check in</div>
+
     <div class="circle-wrapper">
       <svg class="rotating-ring" width="170" height="170">
         <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="0 7" stroke-linecap="round" />
@@ -198,6 +217,7 @@
         <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
       </div>
     </div>
+
     <div class="card">
       <div class="check-success">Check-in successful</div>
       <div id="name" class="name">Name Placeholder</div>
@@ -208,36 +228,50 @@
       <div class="checkin-time"><span id="checkinTime">--</span></div>
       <div class="timer" id="timer">⏱ 0:00:00</div>
     </div>
+
     <label class="upload-btn" id="uploadLabel">
       Upload Image
       <input type="file" id="uploadImage" accept="image/*" />
     </label>
+
     <img src="bottom.png" alt="Bottom Decoration" class="bottom-image" />
   </div>
 
   <script>
-    async function getCheckinData() {
-      const cache = await caches.open('checkin-cache');
-      const resp = await cache.match('/checkin-data');
-      if (resp) return await resp.json();
-      return {
-        name: "Dmytro Gerasymchuk",
-        id: "264019394",
-        activity: "Schwimmen",
-        venue: "Strandbad Jungfernheide – Schwimmen"
-      };
+    const userDataKeys = ["name", "id", "activity", "venue"];
+
+    function saveUserData() {
+      localStorage.setItem("name", document.getElementById("inputName").value);
+      localStorage.setItem("id", document.getElementById("inputId").value);
+      localStorage.setItem("activity", document.getElementById("inputActivity").value);
+      localStorage.setItem("venue", document.getElementById("inputVenue").value);
+      location.reload();
     }
 
-    window.onload = async () => {
-      const data = await getCheckinData();
-      const nameParts = data.name.trim().split(" ");
+    function hasStoredData() {
+      return userDataKeys.every(k => localStorage.getItem(k));
+    }
+
+    window.onload = () => {
+      if (!hasStoredData()) return;
+
+      document.getElementById("setupForm").style.display = "none";
+      document.getElementById("appRoot").classList.add("loaded");
+
+      const name = localStorage.getItem("name");
+      const id = localStorage.getItem("id");
+      const activity = localStorage.getItem("activity");
+      const venue = localStorage.getItem("venue");
+
+      const nameParts = name.trim().split(" ");
       const formattedName = nameParts.length > 1
         ? `${nameParts[0]}\n${nameParts.slice(1).join(" ")}`
-        : data.name;
+        : name;
+
       document.getElementById("name").textContent = formattedName;
-      document.getElementById("id").textContent = data.id;
-      document.getElementById("activity").textContent = data.activity;
-      document.getElementById("venue").textContent = data.venue;
+      document.getElementById("id").textContent = id;
+      document.getElementById("activity").textContent = activity;
+      document.getElementById("venue").textContent = venue;
 
       const now = new Date();
       const options = { month: 'short', day: 'numeric' };
