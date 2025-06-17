@@ -4,11 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-  <!-- PWA meta -->
+  <!-- ✅ PWA + mobile support -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="icon" href="icon-192.png" type="image/png" />
@@ -37,24 +36,6 @@
       align-items: center;
     }
 
-    .fullscreen-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      font-size: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 30;
-    }
-
-    :fullscreen .fullscreen-btn {
-      display: none;
-    }
-
     .checkin-header {
       margin-top: 20px;
       font-size: 22px;
@@ -71,7 +52,19 @@
       z-index: 10;
     }
 
-    .rotating-ring, .static-border {
+    .rotating-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 170px;
+      height: 170px;
+      z-index: 1;
+      pointer-events: none;
+      animation: rotate 36s linear infinite;
+      transform-origin: center;
+    }
+
+    .static-border {
       position: absolute;
       top: 0;
       left: 0;
@@ -197,7 +190,6 @@
 </head>
 <body>
   <div class="app" id="appRoot">
-
     <div class="checkin-header">Check in</div>
 
     <div class="circle-wrapper">
@@ -278,21 +270,6 @@
           profile.src = URL.createObjectURL(file);
           label.style.display = "none";
         }
-      });
-
-      const fsBtn = document.getElementById('fsBtn');
-      fsBtn.addEventListener('click', () => {
-        const elem = document.documentElement;
-        if (!document.fullscreenElement) {
-          elem.requestFullscreen({ navigationUI: "hide" }).catch(err => {
-            console.warn("Fullscreen failed:", err);
-          });
-        }
-      });
-
-      document.addEventListener('fullscreenchange', () => {
-        document.getElementById('fsBtn').style.display =
-          document.fullscreenElement ? 'none' : 'block';
       });
     };
   </script>
