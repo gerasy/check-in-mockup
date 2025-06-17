@@ -1,55 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Check-in Setup</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      padding: 20px;
-      text-align: center;
-    }
-    button {
-      margin-top: 20px;
-      font-size: 18px;
-      padding: 12px 24px;
-      background: #007f5f;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Launcher</title>
 </head>
 <body>
-  <h2>Setting up your check-in...</h2>
-  <p>This will launch the app with your info. You can save it to your Home Screen after that.</p>
-
-  <button id="continueBtn">Continue to App</button>
-
+  <h1>Launching...</h1>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const defaults = {
-      name: "John Doe",
-      id: "254011334",
-      activity: "Schwimmen",
-      venue: "Strandbad Jungfernheide – Schwimmen"
-    };
+    async function saveCheckinData(data) {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SAVE_CHECKIN',
+          payload: data
+        });
+      } else {
+        console.warn('Service worker not ready.');
+      }
+    }
 
-    localStorage.setItem("name", params.get("name") || defaults.name);
-    localStorage.setItem("id", params.get("id") || defaults.id);
-    localStorage.setItem("activity", params.get("activity") || defaults.activity);
-    localStorage.setItem("venue", params.get("venue") || defaults.venue);
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const data = {
+        name: params.get('name') || "Default Name",
+        id: params.get('id') || "000000",
+        activity: params.get('activity') || "Default Activity",
+        venue: params.get('venue') || "Default Venue"
+      };
 
-    document.getElementById("continueBtn").addEventListener("click", () => {
-      window.location.href = "index.html";
-    });
+      // Wait until SW is active
+      const registration = await navigator.serviceWorker.ready;
+      await saveCheckinData(data);
+      setTimeout(() => window.location.href = 'index.html', 500); // delay to ensure SW finishes
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(init);
+    } else {
+      window.location.href = 'index.html';
+    }
   </script>
 </body>
 </html>

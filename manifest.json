@@ -1,10 +1,9 @@
 {
   "name": "Check-in App",
   "short_name": "Check-in",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#007f5f",
+  "background_color": "#ffffff",
   "theme_color": "#007f5f",
   "icons": [
     {
