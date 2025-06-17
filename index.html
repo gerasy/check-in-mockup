@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Check-in</title>
   <style>
-    body, html {
+    html, body {
       margin: 0;
       padding: 0;
       font-family: sans-serif;
-      background: url('background.png') no-repeat center center;
-      background-size: cover;
       width: 100%;
       height: 100%;
+      background: url('background.png') no-repeat center center;
+      background-size: cover;
       overflow: hidden;
     }
 
@@ -24,6 +24,24 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+    }
+
+    .fullscreen-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 30;
+    }
+
+    :fullscreen .fullscreen-btn {
+      display: none;
     }
 
     .checkin-header {
@@ -165,20 +183,6 @@
       font-size: 13px;
     }
 
-    .fullscreen-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      font-size: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 30;
-    }
-
     @keyframes rotate {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -187,7 +191,7 @@
 </head>
 <body>
   <div class="app" id="appRoot">
-    <button class="fullscreen-btn" onclick="enterFullscreen()">Full Screen</button>
+    <button class="fullscreen-btn" id="fsBtn">Full Screen</button>
 
     <div class="checkin-header">Check in</div>
 
@@ -198,7 +202,6 @@
       <svg class="static-border" width="170" height="170">
         <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="21 21" stroke-linecap="round"/>
       </svg>
-
       <div class="photo-wrapper">
         <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
       </div>
@@ -272,16 +275,21 @@
       });
     };
 
-    function enterFullscreen() {
+    document.getElementById('fsBtn').addEventListener('click', () => {
       const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
+      if (!document.fullscreenElement) {
+        elem.requestFullscreen({ navigationUI: "hide" }).catch(err => {
+          console.warn("Fullscreen failed:", err);
+        });
       }
-    }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      const btn = document.getElementById('fsBtn');
+      if (!document.fullscreenElement) {
+        btn.style.display = 'block';
+      }
+    });
   </script>
 </body>
 </html>
