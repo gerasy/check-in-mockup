@@ -195,12 +195,14 @@
 
     .bottom-image {
       position: fixed;
-      bottom: 0;
       left: 0;
-      width: 100vw;
-      max-width: 100%;
+      bottom: 0;
+      width: 100%;
+      height: auto;
       z-index: 100;
       pointer-events: none;
+      object-fit: cover;
+      transform: translateY(0); /* JS adjusts this */
     }
 
     @keyframes rotate {
@@ -256,6 +258,16 @@
       };
     }
 
+    function adjustBottomImage() {
+      const img = document.querySelector('.bottom-image');
+      if (window.visualViewport) {
+        const vv = window.visualViewport;
+        img.style.transform = `translateY(${vv.offsetTop + vv.height - window.innerHeight}px)`;
+      } else {
+        img.style.transform = 'translateY(0)';
+      }
+    }
+
     window.onload = () => {
       const { name, id, activity, venue } = getUrlParams();
 
@@ -294,13 +306,19 @@
         }
       });
 
-      // Format name on blur to include a line break
       document.getElementById("name").addEventListener("blur", (e) => {
         const text = e.target.textContent.trim();
         const parts = text.split(" ");
         e.target.textContent = parts.length > 1 ? `${parts[0]}\n${parts.slice(1).join(" ")}` : text;
       });
+
+      adjustBottomImage();
     };
+
+    window.visualViewport?.addEventListener('resize', adjustBottomImage);
+    window.visualViewport?.addEventListener('scroll', adjustBottomImage);
+    window.addEventListener('resize', adjustBottomImage);
+    window.addEventListener('scroll', adjustBottomImage);
   </script>
 </body>
 </html>
