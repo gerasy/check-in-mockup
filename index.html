@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Check-in</title>
+
+  <!-- PWA + iOS Support -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="icon" href="icon-192.png" type="image/png" />
-  <title>Check-in</title>
+
   <style>
     html, body {
       margin: 0;
-      padding: env(safe-area-inset);
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       font-family: sans-serif;
       width: 100%;
       height: 100%;
@@ -21,6 +22,7 @@
       background-size: cover;
       overflow: hidden;
     }
+
     .app {
       width: 400px;
       height: 800px;
@@ -30,40 +32,31 @@
       flex-direction: column;
       align-items: center;
     }
-    .form-container {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 100px;
-      width: 80%;
-      max-width: 300px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-    .form-container input {
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
-      font-size: 14px;
-    }
-    .form-container button {
-      width: 100%;
-      background: #007f5f;
+
+    .fullscreen-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
       color: white;
-      padding: 10px;
       border: none;
-      font-size: 16px;
+      padding: 6px 10px;
+      font-size: 12px;
       border-radius: 6px;
       cursor: pointer;
+      z-index: 30;
     }
-    .circle-wrapper, .card, .upload-btn, .bottom-image {
+
+    :fullscreen .fullscreen-btn {
       display: none;
     }
-    .loaded .circle-wrapper,
-    .loaded .card,
-    .loaded .upload-btn,
-    .loaded .bottom-image {
-      display: block;
+
+    .checkin-header {
+      margin-top: 20px;
+      font-size: 22px;
+      font-weight: bold;
     }
+
     .circle-wrapper {
       position: absolute;
       top: 100px;
@@ -73,6 +66,7 @@
       height: 170px;
       z-index: 10;
     }
+
     .rotating-ring {
       position: absolute;
       top: 0;
@@ -84,15 +78,15 @@
       transform-origin: center;
       pointer-events: none;
     }
+
     .static-border {
       position: absolute;
       top: 0;
       left: 0;
-      width: 170px;
-      height: 170px;
       z-index: 2;
       pointer-events: none;
     }
+
     .photo-wrapper {
       position: absolute;
       width: 150px;
@@ -104,12 +98,14 @@
       background: #ccc;
       z-index: 3;
     }
+
     .photo-wrapper img {
       width: 150px;
       height: 150px;
       object-fit: cover;
       object-position: center;
     }
+
     .upload-btn {
       display: inline-block;
       margin-top: 270px;
@@ -121,9 +117,11 @@
       cursor: pointer;
       z-index: 20;
     }
+
     .upload-btn input {
       display: none;
     }
+
     .card {
       position: absolute;
       top: 180px;
@@ -141,24 +139,37 @@
       padding-right: 20px;
       box-sizing: border-box;
     }
+
     .check-success {
       font-weight: bold;
       margin-bottom: 10px;
     }
+
     .name {
       font-size: 20px;
       font-weight: bold;
       white-space: pre-line;
+      cursor: text;
     }
-    .id, .venue {
+
+    .id {
       margin-top: 5px;
       font-size: 14px;
     }
+
     .activity {
       margin-top: 5px;
       font-size: 14px;
       font-weight: bold;
+      cursor: text;
     }
+
+    .venue {
+      margin-top: 5px;
+      font-size: 14px;
+      cursor: text;
+    }
+
     .checkin-label {
       position: absolute;
       bottom: 30px;
@@ -166,6 +177,7 @@
       font-size: 12px;
       font-weight: normal;
     }
+
     .checkin-time {
       position: absolute;
       bottom: 15px;
@@ -173,12 +185,14 @@
       font-weight: bold;
       font-size: 13px;
     }
+
     .timer {
       position: absolute;
       bottom: 15px;
       right: 15px;
       font-size: 13px;
     }
+
     .bottom-image {
       position: fixed;
       bottom: 0;
@@ -188,6 +202,7 @@
       z-index: 100;
       pointer-events: none;
     }
+
     @keyframes rotate {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -196,22 +211,15 @@
 </head>
 <body>
   <div class="app" id="appRoot">
-    <div id="setupForm" class="form-container">
-      <input id="inputName" placeholder="Name" required />
-      <input id="inputId" placeholder="ID" required />
-      <input id="inputActivity" placeholder="Activity" required />
-      <input id="inputVenue" placeholder="Venue" required />
-      <button onclick="saveUserData()">Start Check-in</button>
-    </div>
 
     <div class="checkin-header">Check in</div>
 
     <div class="circle-wrapper">
       <svg class="rotating-ring" width="170" height="170">
-        <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="0 7" stroke-linecap="round" />
+        <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="0 7" stroke-linecap="round"/>
       </svg>
       <svg class="static-border" width="170" height="170">
-        <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="21 21" stroke-linecap="round" />
+        <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="21 21" stroke-linecap="round"/>
       </svg>
       <div class="photo-wrapper">
         <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
@@ -220,10 +228,10 @@
 
     <div class="card">
       <div class="check-success">Check-in successful</div>
-      <div id="name" class="name">Name Placeholder</div>
+      <div id="name" class="name" contenteditable="true" spellcheck="false">Name Placeholder</div>
       <div id="id" class="id">ID</div>
-      <div class="activity" id="activity">Activity</div>
-      <div class="venue" id="venue">Venue</div>
+      <div class="activity" id="activity" contenteditable="true" spellcheck="false">Activity</div>
+      <div class="venue" id="venue" contenteditable="true" spellcheck="false">Venue</div>
       <div class="checkin-label">Checked-in at</div>
       <div class="checkin-time"><span id="checkinTime">--</span></div>
       <div class="timer" id="timer">⏱ 0:00:00</div>
@@ -238,36 +246,23 @@
   </div>
 
   <script>
-    const userDataKeys = ["name", "id", "activity", "venue"];
-
-    function saveUserData() {
-      localStorage.setItem("name", document.getElementById("inputName").value);
-      localStorage.setItem("id", document.getElementById("inputId").value);
-      localStorage.setItem("activity", document.getElementById("inputActivity").value);
-      localStorage.setItem("venue", document.getElementById("inputVenue").value);
-      location.reload();
-    }
-
-    function hasStoredData() {
-      return userDataKeys.every(k => localStorage.getItem(k));
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        name: params.get("name") || "John Doe",
+        id: params.get("id") || "224010334",
+        activity: params.get("activity") || "Schwimmen",
+        venue: params.get("venue") || "Strandbad Jungfernheide – Schwimmen"
+      };
     }
 
     window.onload = () => {
-      if (!hasStoredData()) return;
-
-      document.getElementById("setupForm").style.display = "none";
-      document.getElementById("appRoot").classList.add("loaded");
-
-      const name = localStorage.getItem("name");
-      const id = localStorage.getItem("id");
-      const activity = localStorage.getItem("activity");
-      const venue = localStorage.getItem("venue");
+      const { name, id, activity, venue } = getUrlParams();
 
       const nameParts = name.trim().split(" ");
       const formattedName = nameParts.length > 1
         ? `${nameParts[0]}\n${nameParts.slice(1).join(" ")}`
         : name;
-
       document.getElementById("name").textContent = formattedName;
       document.getElementById("id").textContent = id;
       document.getElementById("activity").textContent = activity;
@@ -297,6 +292,13 @@
           profile.src = URL.createObjectURL(file);
           label.style.display = "none";
         }
+      });
+
+      // Format name on blur to include a line break
+      document.getElementById("name").addEventListener("blur", (e) => {
+        const text = e.target.textContent.trim();
+        const parts = text.split(" ");
+        e.target.textContent = parts.length > 1 ? `${parts[0]}\n${parts.slice(1).join(" ")}` : text;
       });
     };
   </script>
