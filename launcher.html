@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Launching...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+  </style>
+</head>
+<body>
+  <p>Launching Check-in App...</p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+
+    // Define default values
+    const defaults = {
+      name: "John Doe",
+      id: "224049334",
+      activity: "Schwimmen",
+      venue: "Strandbad Jungfernheide – Schwimmen"
+    };
+
+    // Set each value from URL param, or fallback to default
+    const name = params.get("name") || defaults.name;
+    const id = params.get("id") || defaults.id;
+    const activity = params.get("activity") || defaults.activity;
+    const venue = params.get("venue") || defaults.venue;
+
+    // Save to localStorage
+    localStorage.setItem("name", name);
+    localStorage.setItem("id", id);
+    localStorage.setItem("activity", activity);
+    localStorage.setItem("venue", venue);
+
+    // Redirect to the main app
+    window.location.href = "index.html";
+  </script>
+</body>
+</html>

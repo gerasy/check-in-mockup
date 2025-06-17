@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Check-in</title>
 
-  <!-- PWA + iOS Support -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -68,23 +66,13 @@
       z-index: 10;
     }
 
-    .rotating-ring {
+    .rotating-ring, .static-border {
       position: absolute;
       top: 0;
       left: 0;
       width: 170px;
       height: 170px;
       z-index: 1;
-      animation: rotate 36s linear infinite;
-      transform-origin: center;
-      pointer-events: none;
-    }
-
-    .static-border {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 2;
       pointer-events: none;
     }
 
@@ -152,7 +140,7 @@
       white-space: pre-line;
     }
 
-    .id {
+    .id, .venue {
       margin-top: 5px;
       font-size: 14px;
     }
@@ -161,11 +149,6 @@
       margin-top: 5px;
       font-size: 14px;
       font-weight: bold;
-    }
-
-    .venue {
-      margin-top: 5px;
-      font-size: 14px;
     }
 
     .checkin-label {
@@ -209,7 +192,7 @@
 </head>
 <body>
   <div class="app" id="appRoot">
-    
+    <button class="fullscreen-btn" id="fsBtn">Full Screen</button>
 
     <div class="checkin-header">Check in</div>
 
@@ -248,10 +231,10 @@
     function getUrlParams() {
       const params = new URLSearchParams(window.location.search);
       return {
-        name: params.get("name") || "Dmytro Gerasymchuk",
-        id: params.get("id") || "264019394",
-        activity: params.get("activity") || "Schwimmen",
-        venue: params.get("venue") || "Strandbad Jungfernheide – Schwimmen"
+        name: localStorage.getItem("name") || params.get("name") || "Dmytro Gerasymchuk",
+        id: localStorage.getItem("id") || params.get("id") || "264019394",
+        activity: localStorage.getItem("activity") || params.get("activity") || "Schwimmen",
+        venue: localStorage.getItem("venue") || params.get("venue") || "Strandbad Jungfernheide – Schwimmen"
       };
     }
 
@@ -294,7 +277,6 @@
       });
 
       const fsBtn = document.getElementById('fsBtn');
-
       fsBtn.addEventListener('click', () => {
         const elem = document.documentElement;
         if (!document.fullscreenElement) {
@@ -305,8 +287,8 @@
       });
 
       document.addEventListener('fullscreenchange', () => {
-        const isFs = !!document.fullscreenElement;
-        document.getElementById('fsBtn').style.display = isFs ? 'none' : 'block';
+        document.getElementById('fsBtn').style.display =
+          document.fullscreenElement ? 'none' : 'block';
       });
     };
   </script>
