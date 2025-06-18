@@ -33,24 +33,6 @@
       align-items: center;
     }
 
-    .fullscreen-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      font-size: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 30;
-    }
-
-    :fullscreen .fullscreen-btn {
-      display: none;
-    }
-
     .checkin-header {
       margin-top: 20px;
       font-size: 22px;
@@ -202,7 +184,8 @@
       z-index: 100;
       pointer-events: none;
       object-fit: cover;
-      transform: translateY(0); /* JS adjusts this */
+      transform: translateY(0) scale(1);
+      transform-origin: bottom left;
     }
 
     @keyframes rotate {
@@ -258,14 +241,25 @@
       };
     }
 
+    function getFixedOffset() {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed; top:0; left:0;';
+      document.body.appendChild(el);
+      const rect = el.getBoundingClientRect();
+      document.body.removeChild(el);
+      return { x: rect.left, y: rect.top };
+    }
+
     function adjustBottomImage() {
       const img = document.querySelector('.bottom-image');
-      if (window.visualViewport) {
-        const vv = window.visualViewport;
-        img.style.transform = `translateY(${vv.offsetTop + vv.height - window.innerHeight}px)`;
-      } else {
-        img.style.transform = 'translateY(0)';
-      }
+      if (!img || !window.visualViewport) return;
+
+      const { x, y } = getFixedOffset();
+      const vv = window.visualViewport;
+      const scale = vv.scale || 1;
+      const translateY = vv.offsetTop + vv.height - window.innerHeight - y;
+
+      img.style.transform = `translateY(${translateY}px) scale(${1 / scale})`;
     }
 
     window.onload = () => {
@@ -315,8 +309,8 @@
       adjustBottomImage();
     };
 
-    window.visualViewport?.addEventListener('resize', adjustBottomImage);
     window.visualViewport?.addEventListener('scroll', adjustBottomImage);
+    window.visualViewport?.addEventListener('resize', adjustBottomImage);
     window.addEventListener('resize', adjustBottomImage);
     window.addEventListener('scroll', adjustBottomImage);
   </script>
