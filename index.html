@@ -88,6 +88,19 @@
       object-position: center;
     }
 
+    .icon-check {
+      position: absolute;
+      bottom: 7px;
+      right: 20px;
+      width: 32px;
+      height: 32px;
+      z-index: 12;
+      background: white;
+      border-radius: 50%;
+      padding: 2px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.2);
+    }
+
     .upload-btn {
       display: inline-block;
       margin-top: 270px;
@@ -175,6 +188,26 @@
       font-size: 13px;
     }
 
+    .icon-close {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 24px;
+      height: 24px;
+      z-index: 15;
+      cursor: pointer;
+    }
+
+    .icon-share {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 30px;
+      height: 32px;
+      z-index: 15;
+      cursor: pointer;
+    }
+
     .bottom-image {
       position: fixed;
       left: 0;
@@ -209,9 +242,13 @@
       <div class="photo-wrapper">
         <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
       </div>
+      <img src="check.png" alt="Checked" class="icon-check" />
     </div>
 
     <div class="card">
+      <img src="close_icon.png" alt="Close" class="icon-close" />
+      <img src="share.png" alt="Share" class="icon-share" />
+
       <div class="check-success">Check-in successful</div>
       <div id="name" class="name" contenteditable="true" spellcheck="false">Name Placeholder</div>
       <div id="id" class="id">ID</div>
@@ -229,6 +266,7 @@
 
     <img src="bottom.png" alt="Bottom Decoration" class="bottom-image" />
   </div>
+
   <script src="https://cdn.counter.dev/script.js" data-id="058c84d8-d0f6-45e4-a845-757f13b1d01f" data-utcoffset="2"></script>
   <script>
     function getUrlParams() {
