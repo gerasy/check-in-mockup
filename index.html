@@ -295,12 +295,13 @@
       const { x, y } = getFixedOffset();
       const vv = window.visualViewport;
       const scale = vv.scale || 1;
+      const translateX = vv.offsetLeft - x;
       const translateY = vv.offsetTop + vv.height - window.innerHeight - y;
 
-      img.style.transform = `translateY(${translateY}px) scale(${1 / scale})`;
+      img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${1 / scale})`;
     }
 
-    window.onload = () => {
+    window.addEventListener('load', () => {
       const { name, id, activity, venue } = getUrlParams();
 
       const nameParts = name.trim().split(" ");
@@ -345,7 +346,7 @@
       });
 
       adjustBottomImage();
-    };
+    });
 
     window.visualViewport?.addEventListener('scroll', adjustBottomImage);
     window.visualViewport?.addEventListener('resize', adjustBottomImage);
