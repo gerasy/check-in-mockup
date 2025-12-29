@@ -101,22 +101,6 @@
       box-shadow: 0 0 4px rgba(0,0,0,0.2);
     }
 
-    .upload-btn {
-      display: inline-block;
-      margin-top: 270px;
-      padding: 8px 14px;
-      background-color: #007f5f;
-      color: white;
-      font-size: 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 20;
-    }
-
-    .upload-btn input {
-      display: none;
-    }
-
     .card {
       position: absolute;
       top: 180px;
@@ -147,22 +131,34 @@
       cursor: text;
     }
 
-    .id {
-      margin-top: 5px;
-      font-size: 14px;
+    .details {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px;
     }
 
-    .activity {
-      margin-top: 5px;
+    .detail {
+      display: grid;
+      gap: 4px;
       font-size: 14px;
-      font-weight: bold;
+      text-align: center;
+    }
+
+    .detail-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      opacity: 0.7;
+    }
+
+    .detail-value {
+      font-size: 16px;
+      font-weight: 600;
       cursor: text;
     }
 
-    .venue {
-      margin-top: 5px;
-      font-size: 14px;
-      cursor: text;
+    .image-input {
+      display: none;
     }
 
     .checkin-label {
@@ -208,6 +204,10 @@
       cursor: pointer;
     }
 
+    .photo-wrapper {
+      cursor: pointer;
+    }
+
     .bottom-image {
       position: fixed;
       left: 0;
@@ -239,9 +239,10 @@
       <svg class="static-border" width="170" height="170">
         <circle cx="85" cy="85" r="83" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="3" stroke-dasharray="21 21" stroke-linecap="round"/>
       </svg>
-      <div class="photo-wrapper">
+      <div class="photo-wrapper" id="photoWrapper">
         <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
       </div>
+      <input type="file" id="uploadImage" class="image-input" accept="image/*" />
       <img src="check.png" alt="Checked" class="icon-check" />
     </div>
 
@@ -251,18 +252,24 @@
 
       <div class="check-success">Check-in successful</div>
       <div id="name" class="name" contenteditable="true" spellcheck="false">Name Placeholder</div>
-      <div id="id" class="id">ID</div>
-      <div class="activity" id="activity" contenteditable="true" spellcheck="false">Activity</div>
-      <div class="venue" id="venue" contenteditable="true" spellcheck="false">Venue</div>
+      <div class="details">
+        <div class="detail">
+          <div class="detail-label">Venue</div>
+          <div class="detail-value" id="venue" contenteditable="true" spellcheck="false">Venue</div>
+        </div>
+        <div class="detail">
+          <div class="detail-label">Activity</div>
+          <div class="detail-value" id="activity" contenteditable="true" spellcheck="false">Activity</div>
+        </div>
+        <div class="detail">
+          <div class="detail-label">Category</div>
+          <div class="detail-value" id="category" contenteditable="true" spellcheck="false">Category</div>
+        </div>
+      </div>
       <div class="checkin-label">Checked-in at</div>
       <div class="checkin-time"><span id="checkinTime">--</span></div>
       <div class="timer" id="timer">⏱ 0:00:00</div>
     </div>
-
-    <label class="upload-btn" id="uploadLabel">
-      Upload Image
-      <input type="file" id="uploadImage" accept="image/*" />
-    </label>
 
     <img src="bottom.png" alt="Bottom Decoration" class="bottom-image" />
   </div>
@@ -273,9 +280,9 @@
       const params = new URLSearchParams(window.location.search);
       return {
         name: params.get("name") || "John Doe",
-        id: params.get("id") || "224010334",
         activity: params.get("activity") || "Schwimmen",
-        venue: params.get("venue") || "Strandbad Jungfernheide – Schwimmen"
+        venue: params.get("venue") || "Stadtbad Tiergarten",
+        category: params.get("category") || "Swimming"
       };
     }
 
@@ -302,16 +309,16 @@
     }
 
     window.addEventListener('load', () => {
-      const { name, id, activity, venue } = getUrlParams();
+      const { name, activity, venue, category } = getUrlParams();
 
       const nameParts = name.trim().split(" ");
       const formattedName = nameParts.length > 1
         ? `${nameParts[0]}\n${nameParts.slice(1).join(" ")}`
         : name;
       document.getElementById("name").textContent = formattedName;
-      document.getElementById("id").textContent = id;
       document.getElementById("activity").textContent = activity;
       document.getElementById("venue").textContent = venue;
+      document.getElementById("category").textContent = category;
 
       const now = new Date();
       const options = { month: 'short', day: 'numeric' };
@@ -329,14 +336,17 @@
 
       const upload = document.getElementById("uploadImage");
       const profile = document.getElementById("profileImage");
-      const label = document.getElementById("uploadLabel");
+      const photoWrapper = document.getElementById("photoWrapper");
 
       upload.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (file) {
           profile.src = URL.createObjectURL(file);
-          label.style.display = "none";
         }
+      });
+
+      photoWrapper.addEventListener("click", () => {
+        upload.click();
       });
 
       document.getElementById("name").addEventListener("blur", (e) => {
