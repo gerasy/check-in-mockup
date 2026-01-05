@@ -104,12 +104,27 @@
       position: relative;
     }
 
-    .dashed-ring {
+    .rotating-ring {
       position: absolute;
       top: 0;
       left: 0;
       width: 160px;
       height: 160px;
+      animation: rotate 36s linear infinite;
+      transform-origin: center;
+    }
+
+    .static-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 160px;
+      height: 160px;
+    }
+
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     .photo-wrapper {
@@ -141,6 +156,10 @@
       font-size: 22px;
       font-weight: 600;
       color: #1a1a1a;
+    }
+
+    .user-name span {
+      cursor: text;
     }
 
     .checkin-time {
@@ -185,6 +204,13 @@
       color: #666;
       font-weight: 400;
       text-align: right;
+      cursor: text;
+    }
+
+    [contenteditable]:focus {
+      outline: none;
+      background: rgba(0, 168, 107, 0.05);
+      border-radius: 4px;
     }
 
     .image-input {
@@ -215,8 +241,11 @@
     <div class="white-content">
       <div class="photo-container">
         <div class="photo-ring">
-          <svg class="dashed-ring" viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="76" fill="none" stroke="#c8e6c9" stroke-width="3" stroke-dasharray="8 8" stroke-linecap="round"/>
+          <svg class="rotating-ring" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="76" fill="none" stroke="#c8e6c9" stroke-width="3" stroke-dasharray="0 8" stroke-linecap="round"/>
+          </svg>
+          <svg class="static-ring" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="76" fill="none" stroke="#c8e6c9" stroke-width="3" stroke-dasharray="20 20" stroke-linecap="round"/>
           </svg>
           <div class="photo-wrapper" id="photoWrapper">
             <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
@@ -226,7 +255,7 @@
       <input type="file" id="uploadImage" class="image-input" accept="image/*" />
 
       <div class="user-info">
-        <div class="user-name"><span id="name">John Doe</span> · <span id="userId">264019394</span></div>
+        <div class="user-name"><span id="name" contenteditable="true" spellcheck="false">John Doe</span> · <span id="userId" contenteditable="true" spellcheck="false">264019394</span></div>
         <div class="checkin-time">Check-in: <span id="checkinDateTime">Dec 28, 15:01</span> · <span id="timer">0:00</span></div>
       </div>
 
@@ -238,7 +267,7 @@
             </svg>
             <span>Venue</span>
           </div>
-          <div class="detail-value" id="venue">Stadtbad Tiergarten</div>
+          <div class="detail-value" id="venue" contenteditable="true" spellcheck="false">Stadtbad Tiergarten</div>
         </div>
 
         <div class="detail-row">
@@ -248,7 +277,7 @@
             </svg>
             <span>Activity</span>
           </div>
-          <div class="detail-value" id="activity">Schwimmen</div>
+          <div class="detail-value" id="activity" contenteditable="true" spellcheck="false">Schwimmen</div>
         </div>
 
         <div class="detail-row">
@@ -258,7 +287,7 @@
             </svg>
             <span>Category</span>
           </div>
-          <div class="detail-value" id="category">Swimming</div>
+          <div class="detail-value" id="category" contenteditable="true" spellcheck="false">Swimming</div>
         </div>
       </div>
     </div>
