@@ -455,8 +455,8 @@
 
     // Fetch venue page via CORS proxy
     async function fetchVenueInfo(url) {
-      // Using allorigins as CORS proxy - it wraps the response
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+      // Using codetabs as CORS proxy
+      const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
 
       const response = await fetch(proxyUrl);
       if (!response.ok) {
