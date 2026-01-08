@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
   <style>
     * {
@@ -467,10 +468,65 @@
       return parseVenueInfo(html);
     }
 
+    // German names for random generation
+    const germanFirstNames = {
+      male: ['Max', 'Paul', 'Leon', 'Felix', 'Lukas', 'Tim', 'Jan', 'Niklas', 'Tom', 'Ben'],
+      female: ['Emma', 'Mia', 'Hannah', 'Sofia', 'Anna', 'Lea', 'Lena', 'Marie', 'Laura', 'Lisa']
+    };
+    const germanSurnames = ['Müller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Becker', 'Hoffmann', 'Koch'];
+
+    function getRandomName(gender) {
+      const firstNames = germanFirstNames[gender] || germanFirstNames.male;
+      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+      const surname = germanSurnames[Math.floor(Math.random() * germanSurnames.length)];
+      return `${firstName} ${surname}`;
+    }
+
+    // Load face-api models
+    let modelsLoaded = false;
+    async function loadFaceModels() {
+      if (modelsLoaded) return;
+      try {
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL)
+        ]);
+        modelsLoaded = true;
+        console.log('Face detection models loaded');
+      } catch (err) {
+        console.error('Failed to load face models:', err);
+      }
+    }
+
+    // Detect gender from image
+    async function detectGender(imgElement) {
+      if (!modelsLoaded) {
+        await loadFaceModels();
+      }
+
+      try {
+        const detection = await faceapi
+          .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
+          .withAgeAndGender();
+
+        if (detection) {
+          console.log('Detected:', detection.gender, 'confidence:', detection.genderProbability);
+          return detection.gender; // 'male' or 'female'
+        }
+      } catch (err) {
+        console.error('Gender detection failed:', err);
+      }
+      return null;
+    }
+
     // QR Scanner state
     let html5QrCode = null;
 
     window.addEventListener('load', () => {
+      // Preload face detection models in background
+      loadFaceModels();
+
       const { name, activity, venue, category, userId } = getUrlParams();
 
       document.getElementById("name").textContent = name;
@@ -496,10 +552,21 @@
       const profile = document.getElementById("profileImage");
       const photoWrapper = document.getElementById("photoWrapper");
 
-      upload.addEventListener("change", (e) => {
+      upload.addEventListener("change", async (e) => {
         const file = e.target.files[0];
         if (file) {
-          profile.src = URL.createObjectURL(file);
+          const objectUrl = URL.createObjectURL(file);
+          profile.src = objectUrl;
+
+          // Wait for image to load, then detect gender
+          profile.onload = async () => {
+            const gender = await detectGender(profile);
+            if (gender) {
+              const randomName = getRandomName(gender);
+              document.getElementById('name').textContent = randomName;
+              console.log(`Detected ${gender}, set name to ${randomName}`);
+            }
+          };
         }
       });
 
