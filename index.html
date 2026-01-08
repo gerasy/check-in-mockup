@@ -6,6 +6,7 @@
   <title>Check-in</title>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
     * {
@@ -216,9 +217,111 @@
     .image-input {
       display: none;
     }
+
+    /* QR Scanner Modal */
+    .qr-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-modal.active {
+      display: flex;
+    }
+
+    .qr-modal-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .qr-modal-title {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .qr-close-btn {
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-close-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: #fff;
+    }
+
+    #qr-reader {
+      width: 300px;
+      height: 300px;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .qr-instructions {
+      color: rgba(255,255,255,0.8);
+      margin-top: 24px;
+      text-align: center;
+      font-size: 14px;
+      padding: 0 24px;
+    }
+
+    .qr-status {
+      color: #00a86b;
+      margin-top: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      min-height: 20px;
+    }
+
+    .qr-status.error {
+      color: #ff6b6b;
+    }
+
+    .qr-status.loading {
+      color: #ffd93d;
+    }
   </style>
 </head>
 <body>
+  <!-- QR Scanner Modal -->
+  <div class="qr-modal" id="qrModal">
+    <div class="qr-modal-header">
+      <span class="qr-modal-title">Scan Venue QR Code</span>
+      <button class="qr-close-btn" id="qrCloseBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div id="qr-reader"></div>
+    <p class="qr-instructions">Point your camera at an Urban Sports Club venue QR code</p>
+    <p class="qr-status" id="qrStatus"></p>
+  </div>
+
   <div class="app">
     <div class="green-header">
       <div class="icon-close">
@@ -305,6 +408,68 @@
       };
     }
 
+    // Parse venue info from fetched HTML (adapted from user's grab_info function)
+    function parseVenueInfo(html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      const clean = (s) => (s || "").trim().replace(/\s+/g, " ");
+
+      // 1) Prefer "Freies Training" first item (most robust for Activity + Category)
+      const freeTrainingContainer =
+        doc.querySelector('section#results .container[data-service-type-id="1"]') ||
+        doc.querySelector('.container[data-service-type-id="1"]');
+
+      const firstSnippet = freeTrainingContainer?.querySelector(".smm-class-snippet");
+      const dataLayerRaw =
+        firstSnippet?.querySelector("[data-datalayer]")?.getAttribute("data-datalayer") || "";
+
+      // data-datalayer is HTML-escaped and not valid JSON (missing commas), so we regex it.
+      const decoded = dataLayerRaw
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, "&");
+
+      const pick = (re) => {
+        const m = decoded.match(re);
+        return m ? clean(m[1]) : null;
+      };
+
+      const venueFromDl = pick(/"venue":\{[\s\S]*?"name":"([^"]+)"/);
+      const activityFromDl = pick(/"class":\{[\s\S]*?"name":"([^"]+)"/);
+      const categoryFromDl = pick(/"class":\{[\s\S]*?"category":"([^"]+)"/);
+
+      // 2) Fallbacks from the static page header (venue + discipline)
+      const venueFallback =
+        clean(doc.querySelector("main h1")?.textContent) ||
+        doc.querySelector('meta[property="og:title"]')?.content?.split("|")?.[0]?.trim() ||
+        null;
+
+      const activityFallback = clean(doc.querySelector(".disciplines")?.textContent) || null;
+
+      return {
+        venue: venueFromDl || venueFallback,
+        activity: activityFromDl || activityFallback,
+        category: categoryFromDl || null,
+      };
+    }
+
+    // Fetch venue page via CORS proxy
+    async function fetchVenueInfo(url) {
+      // Using allorigins as CORS proxy - it wraps the response
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+
+      const response = await fetch(proxyUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
+      }
+
+      const html = await response.text();
+      return parseVenueInfo(html);
+    }
+
+    // QR Scanner state
+    let html5QrCode = null;
+
     window.addEventListener('load', () => {
       const { name, activity, venue, category, userId } = getUrlParams();
 
@@ -340,6 +505,115 @@
 
       photoWrapper.addEventListener("click", () => {
         upload.click();
+      });
+
+      // ===== QR Scanner Logic =====
+      const closeBtn = document.querySelector('.icon-close');
+      const qrModal = document.getElementById('qrModal');
+      const qrCloseBtn = document.getElementById('qrCloseBtn');
+      const qrStatus = document.getElementById('qrStatus');
+
+      // Open QR scanner when clicking the close (X) button
+      closeBtn.addEventListener('click', async () => {
+        qrModal.classList.add('active');
+        qrStatus.textContent = '';
+        qrStatus.className = 'qr-status';
+
+        try {
+          html5QrCode = new Html5Qrcode("qr-reader");
+
+          await html5QrCode.start(
+            { facingMode: "environment" }, // Use back camera
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 }
+            },
+            async (decodedText) => {
+              // QR code detected!
+              console.log('QR Code found:', decodedText);
+
+              // Check if it's an Urban Sports Club URL
+              if (decodedText.includes('urbansportsclub.com')) {
+                qrStatus.textContent = 'Found! Fetching venue info...';
+                qrStatus.className = 'qr-status loading';
+
+                try {
+                  // Stop scanner
+                  await html5QrCode.stop();
+                  html5QrCode = null;
+
+                  // Fetch venue info
+                  const info = await fetchVenueInfo(decodedText);
+
+                  // Fill in the fields
+                  if (info.venue) {
+                    document.getElementById('venue').textContent = info.venue;
+                  }
+                  if (info.activity) {
+                    document.getElementById('activity').textContent = info.activity;
+                  }
+                  if (info.category) {
+                    document.getElementById('category').textContent = info.category;
+                  }
+
+                  qrStatus.textContent = 'Success! Fields updated.';
+                  qrStatus.className = 'qr-status';
+
+                  // Close modal after short delay
+                  setTimeout(() => {
+                    qrModal.classList.remove('active');
+                  }, 1500);
+
+                } catch (err) {
+                  console.error('Fetch error:', err);
+                  qrStatus.textContent = 'Error fetching venue info. Try again.';
+                  qrStatus.className = 'qr-status error';
+
+                  // Restart scanner
+                  startScanner();
+                }
+              } else {
+                qrStatus.textContent = 'Not an Urban Sports Club QR code';
+                qrStatus.className = 'qr-status error';
+              }
+            },
+            (errorMessage) => {
+              // Scan error (usually just means no QR found yet)
+            }
+          );
+        } catch (err) {
+          console.error('Camera error:', err);
+          qrStatus.textContent = 'Camera access denied or not available';
+          qrStatus.className = 'qr-status error';
+        }
+      });
+
+      // Helper to restart scanner
+      async function startScanner() {
+        if (html5QrCode) {
+          try {
+            await html5QrCode.stop();
+          } catch (e) {}
+        }
+
+        html5QrCode = new Html5Qrcode("qr-reader");
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          () => {},
+          () => {}
+        );
+      }
+
+      // Close QR scanner
+      qrCloseBtn.addEventListener('click', async () => {
+        if (html5QrCode) {
+          try {
+            await html5QrCode.stop();
+            html5QrCode = null;
+          } catch (e) {}
+        }
+        qrModal.classList.remove('active');
       });
     });
   </script>
