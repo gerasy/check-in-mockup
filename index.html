@@ -7,7 +7,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
   <style>
     * {
@@ -482,29 +481,37 @@
       return `${firstName} ${surname}`;
     }
 
-    // Load face-api models
-    let modelsLoaded = false;
-    async function loadFaceModels() {
-      if (modelsLoaded) return;
+    // Lazy load face-api library and models
+    let faceApiLoaded = false;
+    async function loadFaceApi() {
+      if (faceApiLoaded) return true;
       try {
+        // Dynamically load the face-api.js script
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+
+        // Load the models
         const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL)
         ]);
-        modelsLoaded = true;
-        console.log('Face detection models loaded');
+        faceApiLoaded = true;
+        console.log('Face-api and models loaded');
+        return true;
       } catch (err) {
-        console.error('Failed to load face models:', err);
+        console.error('Failed to load face-api:', err);
+        return false;
       }
     }
 
     // Detect gender from image
     async function detectGender(imgElement) {
-      if (!modelsLoaded) {
-        await loadFaceModels();
-      }
-
       try {
         const detection = await faceapi
           .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
@@ -520,13 +527,43 @@
       return null;
     }
 
+    // Run face detection on double-tap of share button
+    async function runFaceDetection() {
+      if (!userUploadedImage) {
+        console.log('No user-uploaded image, skipping face detection');
+        return;
+      }
+
+      const nameEl = document.getElementById('name');
+      const originalName = nameEl.textContent;
+      nameEl.textContent = 'Calculating Name';
+
+      const loaded = await loadFaceApi();
+      if (!loaded) {
+        nameEl.textContent = originalName;
+        return;
+      }
+
+      const profile = document.getElementById('profileImage');
+      const gender = await detectGender(profile);
+
+      if (gender) {
+        const randomName = getRandomName(gender);
+        nameEl.textContent = randomName;
+        console.log(`Detected ${gender}, set name to ${randomName}`);
+      } else {
+        nameEl.textContent = originalName;
+        console.log('No face detected');
+      }
+    }
+
     // QR Scanner state
     let html5QrCode = null;
 
-    window.addEventListener('load', () => {
-      // Preload face detection models in background
-      loadFaceModels();
+    // Track if user uploaded a custom image
+    let userUploadedImage = false;
 
+    window.addEventListener('load', () => {
       const { name, activity, venue, category, userId } = getUrlParams();
 
       document.getElementById("name").textContent = name;
@@ -552,26 +589,30 @@
       const profile = document.getElementById("profileImage");
       const photoWrapper = document.getElementById("photoWrapper");
 
-      upload.addEventListener("change", async (e) => {
+      upload.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (file) {
           const objectUrl = URL.createObjectURL(file);
           profile.src = objectUrl;
-
-          // Wait for image to load, then detect gender
-          profile.onload = async () => {
-            const gender = await detectGender(profile);
-            if (gender) {
-              const randomName = getRandomName(gender);
-              document.getElementById('name').textContent = randomName;
-              console.log(`Detected ${gender}, set name to ${randomName}`);
-            }
-          };
+          userUploadedImage = true;
         }
       });
 
       photoWrapper.addEventListener("click", () => {
         upload.click();
+      });
+
+      // Double-tap on share button to trigger face detection
+      const shareBtn = document.querySelector('.icon-share');
+      let lastTap = 0;
+      shareBtn.addEventListener('click', (e) => {
+        const now = Date.now();
+        if (now - lastTap < 300) {
+          // Double tap detected
+          e.preventDefault();
+          runFaceDetection();
+        }
+        lastTap = now;
       });
 
       // ===== QR Scanner Logic =====
