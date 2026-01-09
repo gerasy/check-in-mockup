@@ -40,7 +40,7 @@
 
     .icon-close {
       position: absolute;
-      top: 16px;
+      top: 26px;
       left: 16px;
       width: 40px;
       height: 40px;
@@ -62,7 +62,7 @@
 
     .icon-share {
       position: absolute;
-      top: 16px;
+      top: 26px;
       right: 16px;
       width: 40px;
       height: 40px;
@@ -113,6 +113,8 @@
       height: 160px;
       animation: rotate 36s linear infinite;
       transform-origin: center;
+      will-change: transform;
+      backface-visibility: hidden;
     }
 
     .static-ring {
@@ -121,6 +123,7 @@
       left: 0;
       width: 160px;
       height: 160px;
+      backface-visibility: hidden;
     }
 
     @keyframes rotate {
