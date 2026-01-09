@@ -40,7 +40,7 @@
 
     .icon-close {
       position: absolute;
-      top: 26px;
+      top: calc(env(safe-area-inset-top, 0px) + 50px);
       left: 16px;
       width: 40px;
       height: 40px;
@@ -62,7 +62,7 @@
 
     .icon-share {
       position: absolute;
-      top: 26px;
+      top: calc(env(safe-area-inset-top, 0px) + 50px);
       right: 16px;
       width: 40px;
       height: 40px;
@@ -245,7 +245,7 @@
       top: 0;
       left: 0;
       right: 0;
-      padding: 16px;
+      padding: calc(env(safe-area-inset-top, 0px) + 50px) 16px 16px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
