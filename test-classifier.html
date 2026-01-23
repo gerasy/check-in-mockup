@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nationality Classifier Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .status {
+      padding: 15px;
+      background: #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-family: monospace;
+    }
+    .status.loading { background: #fff3cd; }
+    .status.ready { background: #d4edda; }
+    .status.error { background: #f8d7da; }
+    .test-section {
+      margin-bottom: 30px;
+    }
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .test-card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .test-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #ddd;
+    }
+    .test-card h3 {
+      margin: 10px 0 5px;
+      font-size: 14px;
+      color: #666;
+    }
+    .test-card .result {
+      font-weight: bold;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .result.correct { background: #d4edda; color: #155724; }
+    .result.incorrect { background: #f8d7da; color: #721c24; }
+    .result.pending { background: #e0e0e0; color: #666; }
+    .scores {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+    .scores div {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+    .summary {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #007f5f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover { background: #006b4f; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .file-input-wrapper {
+      margin-top: 20px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>Nationality Classifier Test</h1>
+
+  <div class="status" id="status">Initializing...</div>
+
+  <div class="file-input-wrapper">
+    <h3>Test Your Own Images</h3>
+    <p>Select one or more face images to test the classifier:</p>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+    <button id="testSelected" disabled>Test Selected Images</button>
+  </div>
+
+  <div class="test-section" id="customTests">
+    <h2>Custom Test Results</h2>
+    <div class="test-grid" id="customTestGrid"></div>
+  </div>
+
+  <div class="summary" id="summary" style="display: none;">
+    <h2>Test Summary</h2>
+    <div id="summaryContent"></div>
+  </div>
+
+  <script type="module">
+    // Nationality labels for CLIP
+    const nationalityLabels = [
+      'a photo of a Ukrainian person',
+      'a photo of an Indian person',
+      'a photo of a Syrian person',
+      'a photo of a Georgian person',
+      'a photo of an Albanian person',
+      'a photo of a German person'
+    ];
+
+    const labelToNationality = {
+      'a photo of a Ukrainian person': 'ukraine',
+      'a photo of an Indian person': 'india',
+      'a photo of a Syrian person': 'syria',
+      'a photo of a Georgian person': 'georgia',
+      'a photo of an Albanian person': 'albania',
+      'a photo of a German person': 'germany'
+    };
+
+    const nationalityDisplayNames = {
+      'ukraine': 'Ukrainian',
+      'india': 'Indian',
+      'syria': 'Syrian',
+      'georgia': 'Georgian',
+      'albania': 'Albanian',
+      'germany': 'German'
+    };
+
+    let clipClassifier = null;
+    const statusEl = document.getElementById('status');
+    const testBtn = document.getElementById('testSelected');
+    const fileInput = document.getElementById('fileInput');
+    const customTestGrid = document.getElementById('customTestGrid');
+
+    // Results tracking
+    let testResults = [];
+
+    async function loadClipModel() {
+      statusEl.className = 'status loading';
+      statusEl.textContent = 'Loading Transformers.js library...';
+
+      try {
+        const transformers = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+
+        statusEl.textContent = 'Loading CLIP model (this may take a minute on first load)...';
+
+        clipClassifier = await transformers.pipeline(
+          'zero-shot-image-classification',
+          'Xenova/clip-vit-base-patch32'
+        );
+
+        statusEl.className = 'status ready';
+        statusEl.textContent = 'CLIP model loaded and ready! Select images to test.';
+        testBtn.disabled = false;
+
+        return true;
+      } catch (err) {
+        statusEl.className = 'status error';
+        statusEl.textContent = 'Error loading CLIP model: ' + err.message;
+        console.error(err);
+        return false;
+      }
+    }
+
+    async function classifyImage(imageUrl) {
+      if (!clipClassifier) {
+        throw new Error('CLIP not loaded');
+      }
+
+      const results = await clipClassifier(imageUrl, nationalityLabels);
+      return results;
+    }
+
+    function createTestCard(name, expectedNationality = null) {
+      const card = document.createElement('div');
+      card.className = 'test-card';
+      card.innerHTML = `
+        <img src="" alt="Test image">
+        <h3>${name}</h3>
+        ${expectedNationality ? `<div>Expected: <strong>${nationalityDisplayNames[expectedNationality] || expectedNationality}</strong></div>` : ''}
+        <div class="result pending">Pending...</div>
+        <div class="scores"></div>
+      `;
+      return card;
+    }
+
+    async function runTestOnCard(card, imageUrl, expectedNationality = null) {
+      const img = card.querySelector('img');
+      const resultEl = card.querySelector('.result');
+      const scoresEl = card.querySelector('.scores');
+
+      img.src = imageUrl;
+      resultEl.textContent = 'Analyzing...';
+      resultEl.className = 'result pending';
+
+      try {
+        const results = await classifyImage(imageUrl);
+
+        // Get top prediction
+        const topResult = results[0];
+        const predictedNationality = labelToNationality[topResult.label];
+        const predictedName = nationalityDisplayNames[predictedNationality];
+
+        // Display result
+        resultEl.textContent = `Predicted: ${predictedName} (${(topResult.score * 100).toFixed(1)}%)`;
+
+        if (expectedNationality) {
+          const isCorrect = predictedNationality === expectedNationality;
+          resultEl.className = isCorrect ? 'result correct' : 'result incorrect';
+          testResults.push({ expected: expectedNationality, predicted: predictedNationality, correct: isCorrect });
+        } else {
+          resultEl.className = 'result';
+        }
+
+        // Show all scores
+        scoresEl.innerHTML = results.map(r => {
+          const nat = labelToNationality[r.label];
+          const name = nationalityDisplayNames[nat];
+          const pct = (r.score * 100).toFixed(1);
+          return `<div><span>${name}</span><span>${pct}%</span></div>`;
+        }).join('');
+
+        return { predicted: predictedNationality, results };
+      } catch (err) {
+        resultEl.textContent = 'Error: ' + err.message;
+        resultEl.className = 'result incorrect';
+        console.error(err);
+        return null;
+      }
+    }
+
+    function updateSummary() {
+      if (testResults.length === 0) return;
+
+      const summary = document.getElementById('summary');
+      const content = document.getElementById('summaryContent');
+      summary.style.display = 'block';
+
+      const correct = testResults.filter(r => r.correct).length;
+      const total = testResults.length;
+      const accuracy = ((correct / total) * 100).toFixed(1);
+
+      // Group by expected nationality
+      const byNationality = {};
+      testResults.forEach(r => {
+        if (!byNationality[r.expected]) {
+          byNationality[r.expected] = { correct: 0, total: 0 };
+        }
+        byNationality[r.expected].total++;
+        if (r.correct) byNationality[r.expected].correct++;
+      });
+
+      let detailsHtml = '<h3>Per-Nationality Accuracy:</h3><ul>';
+      for (const nat of Object.keys(byNationality)) {
+        const data = byNationality[nat];
+        const pct = ((data.correct / data.total) * 100).toFixed(1);
+        detailsHtml += `<li><strong>${nationalityDisplayNames[nat]}:</strong> ${data.correct}/${data.total} (${pct}%)</li>`;
+      }
+      detailsHtml += '</ul>';
+
+      content.innerHTML = `
+        <h3>Overall Accuracy: ${correct}/${total} (${accuracy}%)</h3>
+        ${detailsHtml}
+      `;
+    }
+
+    // Handle file selection
+    testBtn.addEventListener('click', async () => {
+      const files = fileInput.files;
+      if (files.length === 0) {
+        alert('Please select at least one image');
+        return;
+      }
+
+      testBtn.disabled = true;
+      customTestGrid.innerHTML = '';
+      testResults = [];
+
+      for (const file of files) {
+        // Try to extract expected nationality from filename
+        const fileName = file.name.toLowerCase();
+        let expectedNationality = null;
+
+        if (fileName.includes('ukrain')) expectedNationality = 'ukraine';
+        else if (fileName.includes('india')) expectedNationality = 'india';
+        else if (fileName.includes('syria')) expectedNationality = 'syria';
+        else if (fileName.includes('georgia')) expectedNationality = 'georgia';
+        else if (fileName.includes('albania')) expectedNationality = 'albania';
+        else if (fileName.includes('german')) expectedNationality = 'germany';
+
+        const card = createTestCard(file.name, expectedNationality);
+        customTestGrid.appendChild(card);
+
+        const imageUrl = URL.createObjectURL(file);
+        await runTestOnCard(card, imageUrl, expectedNationality);
+      }
+
+      updateSummary();
+      testBtn.disabled = false;
+    });
+
+    // Initialize
+    loadClipModel();
+  </script>
+</body>
+</html>

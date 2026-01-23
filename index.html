@@ -470,18 +470,124 @@
       return parseVenueInfo(html);
     }
 
-    // German names for random generation
-    const germanFirstNames = {
-      male: ['Max', 'Paul', 'Leon', 'Felix', 'Lukas', 'Tim', 'Jan', 'Niklas', 'Tom', 'Ben'],
-      female: ['Emma', 'Mia', 'Hannah', 'Sofia', 'Anna', 'Lea', 'Lena', 'Marie', 'Laura', 'Lisa']
+    // Names by nationality for random generation
+    const namesByNationality = {
+      ukraine: {
+        male: ['Oleksandr', 'Dmytro', 'Mykhailo', 'Andriy', 'Maksym', 'Ivan', 'Serhiy', 'Oleh', 'Vasyl', 'Viktor'],
+        female: ['Olena', 'Natalia', 'Iryna', 'Oksana', 'Yulia', 'Tetiana', 'Svitlana', 'Kateryna', 'Maria', 'Anna'],
+        surnames: ['Shevchenko', 'Bondarenko', 'Kovalenko', 'Tkachenko', 'Kravchenko', 'Oliynyk', 'Melnyk', 'Lysenko', 'Marchenko', 'Savchenko']
+      },
+      india: {
+        male: ['Rahul', 'Amit', 'Vikram', 'Raj', 'Arjun', 'Anil', 'Sanjay', 'Ravi', 'Vijay', 'Suresh'],
+        female: ['Priya', 'Ananya', 'Neha', 'Kavita', 'Sunita', 'Deepa', 'Rani', 'Meera', 'Lakshmi', 'Anjali'],
+        surnames: ['Sharma', 'Patel', 'Singh', 'Kumar', 'Verma', 'Gupta', 'Mehta', 'Shah', 'Reddy', 'Nair']
+      },
+      syria: {
+        male: ['Ahmad', 'Mohammed', 'Omar', 'Khaled', 'Youssef', 'Hassan', 'Ali', 'Mahmoud', 'Ibrahim', 'Faisal'],
+        female: ['Fatima', 'Layla', 'Nour', 'Sara', 'Hana', 'Amira', 'Rania', 'Zahra', 'Maryam', 'Dina'],
+        surnames: ['Al-Hassan', 'Al-Ahmad', 'Al-Ali', 'Al-Ibrahim', 'Al-Mahmoud', 'Al-Omar', 'Al-Khalil', 'Al-Rashid', 'Al-Saleh', 'Al-Nasser']
+      },
+      georgia: {
+        male: ['Giorgi', 'Davit', 'Levan', 'Nikoloz', 'Irakli', 'Gigi', 'Tornike', 'Zurab', 'Mikheil', 'Guram'],
+        female: ['Nino', 'Mariam', 'Ana', 'Tamar', 'Ketevan', 'Natia', 'Salome', 'Maia', 'Eka', 'Lika'],
+        surnames: ['Beridze', 'Kapanadze', 'Gelashvili', 'Maisuradze', 'Giorgadze', 'Lomidze', 'Kvaratskhelia', 'Janelidze', 'Chikhladze', 'Tsiklauri']
+      },
+      albania: {
+        male: ['Arben', 'Dritan', 'Erjon', 'Fatmir', 'Genti', 'Ilir', 'Kreshnik', 'Luan', 'Mentor', 'Sokol'],
+        female: ['Elira', 'Flutura', 'Gentiana', 'Mirela', 'Teuta', 'Besa', 'Drita', 'Edlira', 'Lirije', 'Mimoza'],
+        surnames: ['Hoxha', 'Shehu', 'Kelmendi', 'Berisha', 'Leka', 'Basha', 'Duka', 'Gashi', 'Malaj', 'Xhafa']
+      },
+      germany: {
+        male: ['Max', 'Paul', 'Leon', 'Felix', 'Lukas', 'Tim', 'Jan', 'Niklas', 'Tom', 'Ben'],
+        female: ['Emma', 'Mia', 'Hannah', 'Sofia', 'Anna', 'Lea', 'Lena', 'Marie', 'Laura', 'Lisa'],
+        surnames: ['Müller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Becker', 'Hoffmann', 'Koch']
+      }
     };
-    const germanSurnames = ['Müller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Becker', 'Hoffmann', 'Koch'];
 
-    function getRandomName(gender) {
-      const firstNames = germanFirstNames[gender] || germanFirstNames.male;
+    function getRandomName(gender, nationality = 'germany') {
+      const data = namesByNationality[nationality] || namesByNationality.germany;
+      const firstNames = data[gender] || data.male;
       const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-      const surname = germanSurnames[Math.floor(Math.random() * germanSurnames.length)];
+      const surname = data.surnames[Math.floor(Math.random() * data.surnames.length)];
       return `${firstName} ${surname}`;
+    }
+
+    // Lazy load CLIP model for nationality detection
+    let clipClassifier = null;
+    let clipLoading = false;
+
+    async function loadClipModel() {
+      if (clipClassifier) return true;
+      if (clipLoading) {
+        // Wait for existing load to complete
+        while (clipLoading && !clipClassifier) {
+          await new Promise(r => setTimeout(r, 100));
+        }
+        return clipClassifier !== null;
+      }
+
+      clipLoading = true;
+      try {
+        console.log('Loading Transformers.js and CLIP model...');
+        // Dynamic import of Transformers.js from CDN
+        const transformers = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+
+        // Load CLIP for zero-shot image classification
+        clipClassifier = await transformers.pipeline(
+          'zero-shot-image-classification',
+          'Xenova/clip-vit-base-patch32'
+        );
+
+        console.log('CLIP model loaded successfully');
+        clipLoading = false;
+        return true;
+      } catch (err) {
+        console.error('Failed to load CLIP model:', err);
+        clipLoading = false;
+        return false;
+      }
+    }
+
+    // Detect nationality from image using CLIP zero-shot classification
+    async function detectNationality(imgElement) {
+      if (!clipClassifier) {
+        console.log('CLIP not loaded, using default nationality');
+        return 'germany';
+      }
+
+      try {
+        const labels = [
+          'a photo of a Ukrainian person',
+          'a photo of an Indian person',
+          'a photo of a Syrian person',
+          'a photo of a Georgian person',
+          'a photo of an Albanian person',
+          'a photo of a German person'
+        ];
+
+        // CLIP expects image URL or blob
+        const result = await clipClassifier(imgElement.src, labels);
+
+        // Map results back to nationality keys
+        const labelToNationality = {
+          'a photo of a Ukrainian person': 'ukraine',
+          'a photo of an Indian person': 'india',
+          'a photo of a Syrian person': 'syria',
+          'a photo of a Georgian person': 'georgia',
+          'a photo of an Albanian person': 'albania',
+          'a photo of a German person': 'germany'
+        };
+
+        // Results are sorted by score (highest first)
+        const topResult = result[0];
+        console.log('CLIP nationality results:', result);
+        console.log('Top prediction:', topResult.label, 'score:', topResult.score.toFixed(3));
+
+        return labelToNationality[topResult.label] || 'germany';
+      } catch (err) {
+        console.error('Nationality detection failed:', err);
+        return 'germany';
+      }
     }
 
     // Lazy load face-api library and models
@@ -539,24 +645,50 @@
 
       const nameEl = document.getElementById('name');
       const originalName = nameEl.textContent;
-      nameEl.textContent = 'Calculating Name';
+      nameEl.textContent = 'Loading AI models...';
 
-      const loaded = await loadFaceApi();
-      if (!loaded) {
+      // Load both models in parallel
+      const [faceApiReady, clipReady] = await Promise.all([
+        loadFaceApi(),
+        loadClipModel()
+      ]);
+
+      if (!faceApiReady) {
         nameEl.textContent = originalName;
+        console.log('Face-api failed to load');
         return;
       }
 
+      nameEl.textContent = 'Analyzing face...';
+
       const profile = document.getElementById('profileImage');
+
+      // Detect gender with face-api.js
       const gender = await detectGender(profile);
 
-      if (gender) {
-        const randomName = getRandomName(gender);
-        nameEl.textContent = randomName;
-        console.log(`Detected ${gender}, set name to ${randomName}`);
+      // Detect nationality with CLIP (if loaded)
+      let nationality = 'germany'; // default
+      if (clipReady) {
+        nationality = await detectNationality(profile);
       } else {
-        nameEl.textContent = originalName;
-        console.log('No face detected');
+        console.log('CLIP not available, using default nationality');
+      }
+
+      if (gender) {
+        const randomName = getRandomName(gender, nationality);
+        nameEl.textContent = randomName;
+        console.log(`Detected: gender=${gender}, nationality=${nationality} → ${randomName}`);
+      } else {
+        // No face detected, try nationality only with random gender
+        if (clipReady && nationality !== 'germany') {
+          const randomGender = Math.random() > 0.5 ? 'male' : 'female';
+          const randomName = getRandomName(randomGender, nationality);
+          nameEl.textContent = randomName;
+          console.log(`No face detected for gender, using random: ${randomGender}, ${nationality} → ${randomName}`);
+        } else {
+          nameEl.textContent = originalName;
+          console.log('No face detected');
+        }
       }
     }
 

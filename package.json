@@ -1,0 +1,24 @@
+{
+  "name": "check-in-mockup",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gerasy/check-in-mockup.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gerasy/check-in-mockup/issues"
+  },
+  "homepage": "https://github.com/gerasy/check-in-mockup#readme",
+  "description": "",
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1"
+  }
+}
