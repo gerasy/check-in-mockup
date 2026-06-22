@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Launcher</title>
+</head>
+<body>
+  <h1>Launching...</h1>
+  <script>
+    async function saveCheckinData(data) {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SAVE_CHECKIN',
+          payload: data
+        });
+      } else {
+        console.warn('Service worker not ready.');
+      }
+    }
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const data = {
+        name: params.get('name') || "Default Name",
+        id: params.get('id') || "000000",
+        activity: params.get('activity') || "Default Activity",
+        venue: params.get('venue') || "Default Venue"
+      };
+
+      // Wait until SW is active
+      const registration = await navigator.serviceWorker.ready;
+      await saveCheckinData(data);
+      setTimeout(() => window.location.href = 'index.html', 500); // delay to ensure SW finishes
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(init);
+    } else {
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
