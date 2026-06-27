@@ -1106,6 +1106,9 @@
       const data = {
         name: document.getElementById('name').textContent.trim(),
         userId: document.getElementById('userId').textContent.trim(),
+        venue: document.getElementById('venue').textContent.trim(),
+        activity: document.getElementById('activity').textContent.trim(),
+        category: document.getElementById('category').textContent.trim(),
       };
       if (profileDataUrl) data.photo = profileDataUrl;
       try {
@@ -1311,6 +1314,9 @@
       if (saved) {
         setIf('name', saved.name);
         setIf('userId', saved.userId);
+        setIf('venue', saved.venue);
+        setIf('activity', saved.activity);
+        setIf('category', saved.category);
         if (saved.photo) {
           document.getElementById('profileImage').src = saved.photo;
           profileDataUrl = saved.photo;
@@ -1322,8 +1328,8 @@
       setIf('venue', params.venue);
       setIf('category', params.category);
 
-      // Save on edits to identity fields (not the per-checkin venue/activity).
-      ['name', 'userId'].forEach(id => {
+      // Save on edits to any persisted field (identity + last venue/activity).
+      ['name', 'userId', 'venue', 'activity', 'category'].forEach(id => {
         document.getElementById(id).addEventListener('input', scheduleSaveProfile);
       });
 
@@ -1851,6 +1857,7 @@
         document.getElementById('venue').textContent = selectedVenue.name;
         if (selectedVenue.activity) document.getElementById('activity').textContent = selectedVenue.activity;
         if (selectedVenue.category) document.getElementById('category').textContent = selectedVenue.category;
+        scheduleSaveProfile();
         closeMock();
       });
 
