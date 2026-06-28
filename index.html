@@ -80,8 +80,8 @@
     }
 
     .green-header {
-      background: linear-gradient(135deg, #00a86b 0%, #007f5f 100%);
-      height: 320px;
+      background: #3E8065;
+      height: 270px;
       position: relative;
       flex-shrink: 0;
     }
@@ -181,15 +181,15 @@
 
     .photo-wrapper {
       position: absolute;
-      width: 140px;
-      height: 140px;
+      width: 146px;
+      height: 146px;
       border-radius: 50%;
       overflow: hidden;
-      top: 10px;
-      left: 10px;
+      top: 7px;
+      left: 7px;
       background: #ccc;
       cursor: pointer;
-      border: 4px solid #007f5f;
+      border: none;
     }
 
     .photo-wrapper img {
@@ -205,9 +205,10 @@
     }
 
     .user-name {
-      font-size: 22px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 700;
       color: #1a1a1a;
+      white-space: nowrap;
     }
 
     .user-name span {
@@ -215,10 +216,10 @@
     }
 
     .checkin-time {
-      color: #00a86b;
+      color: #30644F;
       font-size: 15px;
-      font-weight: 500;
-      margin-top: 4px;
+      font-weight: 600;
+      margin-top: 6px;
     }
 
     .details-section {
@@ -240,20 +241,21 @@
     .detail-left {
       display: flex;
       align-items: center;
-      gap: 12px;
-      color: #888;
+      gap: 14px;
+      color: #303741;
       font-size: 16px;
     }
 
     .detail-icon {
       width: 24px;
       height: 24px;
-      opacity: 0.5;
+      fill: #8F9BAE;
+      opacity: 1;
     }
 
     .detail-value {
       font-size: 16px;
-      color: #666;
+      color: #59677F;
       font-weight: 400;
       text-align: right;
       cursor: text;
@@ -1033,7 +1035,7 @@
         <div class="detail-row">
           <div class="detail-left">
             <svg class="detail-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/>
+              <path d="M10 2h4a1 1 0 0 1 1 1v1.6c0 .3.1.6.3.8l.9.9c.5.5.8 1.2.8 1.9V20a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V8.2c0-.7.3-1.4.8-1.9l.9-.9c.2-.2.3-.5.3-.8V3a1 1 0 0 1 1-1zm-.5 9a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zm0 3a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
             </svg>
             <span>Activity</span>
           </div>
@@ -1373,12 +1375,17 @@
       const timerEl = document.getElementById("timer");
       const updateTimer = () => {
         const elapsed = Math.floor((Date.now() - checkinStart) / 1000);
+        const s = elapsed % 60;
+        const m = Math.floor(elapsed / 60) % 60;
+        const h = Math.floor(elapsed / 3600);
+        const pad = (n) => String(n).padStart(2, '0');
+        // Match the reference: seconds-only under a minute, then spaced colons.
         if (elapsed < 60) {
           timerEl.textContent = String(elapsed);
+        } else if (elapsed < 3600) {
+          timerEl.textContent = `${m} : ${pad(s)}`;
         } else {
-          const mins = Math.floor(elapsed / 60);
-          const secs = elapsed % 60;
-          timerEl.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+          timerEl.textContent = `${h} : ${pad(m)} : ${pad(s)}`;
         }
       };
       updateTimer();
