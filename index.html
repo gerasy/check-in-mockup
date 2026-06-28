@@ -54,7 +54,10 @@
     }
 
     html {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      /* Match USC's font stack — "Apercu Aktiv" is their (commercial) UI font;
+         on devices without it this falls back to Helvetica Neue, same as the
+         real site does for non-licensed clients. */
+      font-family: "Apercu Aktiv", "Helvetica Neue", Helvetica, Arial, sans-serif;
       width: 100%;
       height: 100%;
       /* Match the mock tab bar so the safe-area below the fixed overlay
@@ -366,7 +369,7 @@
       z-index: 900;
       display: none;
       flex-direction: column;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: "Apercu Aktiv", "Helvetica Neue", Helvetica, Arial, sans-serif;
     }
 
     .mock-app.active { display: flex; }
