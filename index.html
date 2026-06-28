@@ -1086,6 +1086,25 @@
     }
     const deviceId = getDeviceId();
 
+    // Legacy hardcoded membership number — treat as "unset" so those users
+    // migrate to their own derived number.
+    const LEGACY_USER_ID = '264019394';
+
+    // Derive a stable, unique 9-digit membership number from the device UUID.
+    // Deterministic (same device -> same number), so it survives reloads even
+    // before the profile round-trips to the server.
+    function deriveUserId(seed) {
+      let h = 2166136261 >>> 0; // FNV-1a
+      for (let i = 0; i < seed.length; i++) {
+        h ^= seed.charCodeAt(i);
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+      // Map to 9 digits with a non-zero leading digit.
+      const nine = 100000000 + (h % 900000000);
+      return String(nine);
+    }
+    const derivedUserId = deriveUserId(deviceId);
+
     let profileDataUrl = null;  // resized JPEG dataURL of the uploaded photo
 
     async function loadProfile() {
@@ -1313,7 +1332,9 @@
       const saved = await loadProfile();
       if (saved) {
         setIf('name', saved.name);
-        setIf('userId', saved.userId);
+        // Honour a saved userId only if it's a real custom one — the legacy
+        // shared default migrates to this device's derived number.
+        if (saved.userId && saved.userId !== LEGACY_USER_ID) setIf('userId', saved.userId);
         setIf('venue', saved.venue);
         setIf('activity', saved.activity);
         setIf('category', saved.category);
@@ -1327,6 +1348,15 @@
       setIf('activity', params.activity);
       setIf('venue', params.venue);
       setIf('category', params.category);
+
+      // If the userId is still the legacy shared default (or empty), replace it
+      // with this device's unique derived number and persist it.
+      const userIdEl = document.getElementById('userId');
+      const curUserId = userIdEl.textContent.trim();
+      if (!curUserId || curUserId === LEGACY_USER_ID) {
+        userIdEl.textContent = derivedUserId;
+        scheduleSaveProfile();
+      }
 
       // Save on edits to any persisted field (identity + last venue/activity).
       ['name', 'userId', 'venue', 'activity', 'category'].forEach(id => {
