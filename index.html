@@ -196,6 +196,8 @@
       width: 158px;
       height: 158px;
       backface-visibility: hidden;
+      pointer-events: none;
+      z-index: 2;
     }
 
     @keyframes rotate {
@@ -1033,8 +1035,11 @@
           <div class="photo-wrapper" id="photoWrapper">
             <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
           </div>
+          <svg class="static-ring" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="78" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="20 20" stroke-linecap="round"/>
+          </svg>
           <svg class="rotating-ring" viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="76" pathLength="100" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="1.8 2.2" stroke-linecap="round"/>
+            <circle cx="80" cy="80" r="78" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="0 8" stroke-linecap="round"/>
           </svg>
         </div>
       </div>
