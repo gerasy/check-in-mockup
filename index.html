@@ -1099,9 +1099,10 @@
         h ^= seed.charCodeAt(i);
         h = Math.imul(h, 16777619) >>> 0;
       }
-      // Map to 9 digits with a non-zero leading digit.
-      const nine = 100000000 + (h % 900000000);
-      return String(nine);
+      // 3-digit prefix in 250..268 (real USC numbers cluster here) + 6 derived digits.
+      const prefix = 250 + (h % 19);
+      const suffix = Math.floor(h / 19) % 1000000;
+      return String(prefix) + String(suffix).padStart(6, '0');
     }
     const derivedUserId = deriveUserId(deviceId);
 
