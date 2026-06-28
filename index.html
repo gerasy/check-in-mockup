@@ -185,6 +185,8 @@
       transform-origin: center;
       will-change: transform;
       backface-visibility: hidden;
+      pointer-events: none;
+      z-index: 2;
     }
 
     .static-ring {
@@ -230,7 +232,7 @@
     }
 
     .user-name {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 700;
       color: #1a1a1a;
       white-space: nowrap;
@@ -242,7 +244,7 @@
 
     .checkin-time {
       color: #30644F;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
       margin-top: 6px;
     }
@@ -266,9 +268,9 @@
     .detail-left {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 11px;
       color: #303741;
-      font-size: 16px;
+      font-size: 17px;
     }
 
     .detail-icon {
@@ -279,7 +281,7 @@
     }
 
     .detail-value {
-      font-size: 16px;
+      font-size: 17px;
       color: #59677F;
       font-weight: 400;
       text-align: right;
@@ -1028,15 +1030,12 @@
     <div class="white-content">
       <div class="photo-container">
         <div class="photo-ring">
-          <svg class="rotating-ring" viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="77" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="0 8" stroke-linecap="round"/>
-          </svg>
-          <svg class="static-ring" viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="77" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="20 20" stroke-linecap="round"/>
-          </svg>
           <div class="photo-wrapper" id="photoWrapper">
             <img id="profileImage" src="https://picsum.photos/150" alt="Profile" />
           </div>
+          <svg class="rotating-ring" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="76" pathLength="100" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="1.8 2.2" stroke-linecap="round"/>
+          </svg>
         </div>
       </div>
       <input type="file" id="uploadImage" class="image-input" accept="image/*" />
